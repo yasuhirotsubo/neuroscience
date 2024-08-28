@@ -2,7 +2,10 @@
 ======================================================================
 Convert_neuropix2dic.py
 Author: Yasuhiro Tsubo (tsubo@fc.ritsumei.ac.jp)
-Modified: 2024.07.13
+Version 1.0: 2024.07.13
+Version 2.0: 2024.08.28
+  * Changed to output only one neuronID's dictionary (pickle)
+    based on the second argument.
 
 Paper:
 Yasuhiro Tsubo and Shigeru Shinomoto,
@@ -21,7 +24,13 @@ Development Environment:
   * MacPro2019 - 2.5GHz 28-core Intel Xeon W / 640GB 2933MHz DDR4
 
 Usage: for {DATAID}_dic.pkl
-$ python Convert_neuropix2dic.py DATAID
+$ python Convert_neuropix2dic.py DATAID [depth/original](optional)
+     Only use clusters labeled as 'good' in cluster_groups.csv.
+     neuronIDs (keys) are output as follows:
+       "original": (cls) as listed in cluster_groups.csv.
+       "depth": (dpi) sorted by cls in order of depth (deeper is smaller).
+       default: (ref) reassigns cls to consecutive numbers starting from 0.
+
 ======================================================================
 """
 import sys
@@ -36,6 +45,9 @@ REC_MS = 3600*1000
 if __name__ == "__main__":
 
     DATAID = sys.argv[1]
+    MODE = sys.argv[2] if len(sys.argv) >2 else "consecutive"
+
+    print(MODE)
     
     print("Converting neuropixels data...")
 
@@ -76,20 +88,19 @@ if __name__ == "__main__":
     
 
     grall = dfspk[dfspk["cls"].isin(dfdpi["cls"])].groupby("cls")
-    dicspk = {int(cls):grp["time"].sort_values().tolist() 
-              for cls, grp in grall}
-    dicspkr = {dicref[cls]: times for cls, times in dicspk.items() if cls in dicref}
-    dicspkd = {dicdpi[cls]: times for cls, times in dicspk.items() if cls in dicref}
 
-    print("done")
+    dicspko = {int(cls):grp["time"].sort_values().tolist() 
+               for cls, grp in grall}
  
+    if MODE == "original":
+        dicspk = dicspko
+    elif MODE == "depth":
+        dicspk = {dicdpi[cls]: times for cls, times in dicspko.items() if cls in dicref}
+    else:
+        dicspk = {dicref[cls]: times for cls, times in dicspko.items() if cls in dicref}
+
     ## Save the dictionary as a pickle file
-    ## Original cluster ID
     with open(f"{DATAID}_dic.pkl", "wb") as f:
         pickle.dump(dicspk, f)
-    ## Renumbered cluster ID
-    with open(f"{DATAID}r_dic.pkl", "wb") as f:
-        pickle.dump(dicspkr, f)
-    ## Ordered by depth cluster ID
-    with open(f"{DATAID}d_dic.pkl", "wb") as f:
-        pickle.dump(dicspkd, f)
+
+    print("done")

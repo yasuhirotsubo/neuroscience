@@ -2,7 +2,10 @@
 ======================================================================
 ShinGLMCC_fig.py
 Author: Yasuhiro Tsubo (tsubo@fc.ritsumei.ac.jp)
-Modified: 2024.07.13
+Version 1.0: 2024.07.13
+Version 2.0: 2024.08.28
+   * Adjusted the script's argument format to match that of ShinGLMCC_main.py.
+   * Modified the program to avoid the "SettingWithCopyWarning".
 
 Paper:
 Yasuhiro Tsubo and Shigeru Shinomoto,
@@ -10,7 +13,7 @@ Nondifferentiable activity in the brain,
 PNAS nexus, Volume 3, Issue 7, July 2024, pgae261,
 https://doi.org/10.1093/pnasnexus/pgae261
 
-$ python ShinGLMCC_fig.py DATAID_Shin/GLM_best.csv
+$ python ShinGLMCC_fig.py DATAID Shin/GLM
 ======================================================================
 """
 
@@ -21,8 +24,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
-    
-    csvname = sys.argv[1]
+
+    DATAID = sys.argv[1]
+    MODE = sys.argv[2]
+    csvname = f"{DATAID}_{MODE}_best.csv"
     figname = csvname.replace("best.csv","J.pdf")
     s = 20
 
@@ -33,18 +38,17 @@ if __name__ == "__main__":
     num = round((1+np.sqrt(1+4*len(dfe)))*0.5)
     lst = [dfe["ref"][0]]+dfe["tar"][:num-1].tolist()
     idxdic = {ref:idx for idx,ref in enumerate(lst)}
-    dfe["ref"]=dfe["ref"].map(idxdic)
-    dfe["tar"]=dfe["tar"].map(idxdic)
-    dfi["ref"]=dfi["ref"].map(idxdic)
-    dfi["tar"]=dfi["tar"].map(idxdic)
+    dfe.loc[:,"ref"]=dfe["ref"].map(idxdic)
+    dfe.loc[:,"tar"]=dfe["tar"].map(idxdic)
+    dfi.loc[:,"ref"]=dfi["ref"].map(idxdic)
+    dfi.loc[:,"tar"]=dfi["tar"].map(idxdic)
 
-    dfce = dfe.query("ext==1")
-    dfci = dfi.query("inh==1")
+    dfce = dfe.query("ext==1").copy()
+    dfci = dfi.query("inh==1").copy()
     maxJ = dfce["J"].max()
-    dfce = dfce.copy()
-    dfci = dfci.copy()
-    dfce["Se"] = (dfce["J"]*dfce["ext"])*s/maxJ
-    dfci["Si"] = (-dfci["J"]*dfci["inh"])*s/maxJ
+
+    dfce.loc[:,"Se"] = (dfce["J"]*dfce["ext"])*s/maxJ
+    dfci.loc[:,"Si"] = (-dfci["J"]*dfci["inh"])*s/maxJ
     dfci.loc[dfci["Si"]>s,"Si"] = s
 
     plt.gca().set_aspect("equal",adjustable="box")

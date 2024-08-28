@@ -2,7 +2,9 @@
 ======================================================================
 Convert_csv2dic.py
 Author: Yasuhiro Tsubo (tsubo@fc.ritsumei.ac.jp)
-Modified: 2024.07.15
+Version 1.0: 2024.07.15
+Version 2.0: 2024.08.28
+  * Modified to additionally output DATAID_indextable.csv
 
 Paper:
 Yasuhiro Tsubo and Shigeru Shinomoto,
@@ -39,8 +41,13 @@ if __name__ == "__main__":
     dicspk = {int(cls):grp["time"].sort_values().tolist() 
               for cls, grp in grall}
 
+    dftbl = grall.size().reset_index(name="num").reset_index().rename(columns={"index":"ref"})
+    dftbl.to_csv(f"{DATAID}_indextable.csv",index=None)
+
     print("done")
  
     ## Save the dictionary as a pickle file
     with open(f"{DATAID}_dic.pkl", "wb") as f:
         pickle.dump(dicspk, f)
+
+    print(dicspk)

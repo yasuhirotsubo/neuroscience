@@ -1,0 +1,91 @@
+====================================================================
+How to Use "ShinGLMCC": the Neural Connectivity Estimation Algorithm
+  2024.8.28   Yasuhiro Tsubo  (tsubo@fc.ritsumei.ac.jp)
+====================================================================
+
+These programs are designed for Python 3.10 (probably works with a newer version). Before using them, ensure that you have Python 3.10 installed along with the necessary libraries. While the programs primarily use standard libraries, please install numpy, pandas, and joblib in advance using pip or another package manager. If you are using a distribution like Anaconda, these libraries are likely already installed.
+
+-------------------------------
+Program Descriptions:
+-------------------------------
+
+*ShinGLM_main.py: This script is used for creating cross-correlation histograms and performing connectivity estimation. The actual computation is implemented in ShinGLMCC.py and Correlation.py located in the ShinGLMCC folder.
+
+*Convert_neuropix2dic.py: This script converts Neuropixels data files (described in  Step1-A) into a dictionary format used by ShinGLM_main.py.
+
+*Convert_csv2dic.py: This script converts spike timing data written in CSV format (described in Step1-B) into a dictionary format used by ShinGLM_main.py.
+
+-------------------------------
+How to Use the Program Set:
+-------------------------------
+
+................................
+Step 1: Prepare your data in a Python dictionary format where the keys are neuronIDs and the values are lists of spike times (in msec), then save it in a pickle (binary) format.
+
+(A) Creating a (dictionary) pickle file from Neuropixels recorded data:
+   * Create a folder named [DATAID](Arbitrary ID) and store the following files:
+     channel_positions.npy
+     cluster_groups.csv
+     spike_clusters.npy
+     spike_templates.npy
+     spike_times.npy
+     templates.npy
+     
+   * Run the following command:
+    % python Convert_neuropix2dic.py DATAID [depth/original](optional)
+     This will produce an output file named "DATAID_dic.pkl" in pickle format.
+     Only use clusters labeled as 'good' in cluster_groups.csv.
+     neuronIDs (keys) are output as follows:
+       "original": (cls) as listed in cluster_groups.csv.
+       "depth": (dpi) sorted by cls in order of depth (deeper is smaller).
+       default: (ref) reassigns cls to consecutive numbers starting from 0.
+     As a byproduct, a mapping table named DATAID_indextable.csv is also output,
+     showing the relationship between three neuronIDs (dpi, ref, cls),
+     the depth (estimated by channel_positions.npy),
+     and the spike number of each cluster.
+
+(B) Creating a (dictionary) pickle file from CSV-formatted data:
+   * For data stored in CSV format named DATAID.csv (DATAID is arbitrary),
+     where the first column contains cluster numbers and
+           the second column contains spike times, run:
+    % python Convert_csv2dic.py DATAID
+     This will produce an output file named "DATAID_dic.pkl" in pickle format.
+     As a byproduct, a mapping table named DATAID_indextable.csv is also output,
+     showing the relationship between three neuronIDs (ref, cls)
+     and the spike number of each cluster.
+     neuronIDs (keys) are output as follows:
+       "original": (cls) as listed in DATAID.csv
+       default: (ref) reassigns cls to consecutive numbers starting from 0.
+
+................................
+Step 2: Create cross-correlation histograms:
+   * Run the following command:
+    % python ShinGLMCC_main.py DATAID CC
+    This will produce the following files in pickle format.
+       DATAID_acr_J.pkl  autocorrelations at resolution J=0.1ms
+       DATAID_acr_K.pkl  autocorrelations at resolution K=1ms
+       DATAID_cor_J.pkl  crosscorrelations at resolution J=0.1ms
+       DATAID_cor_K.pkl  crosscorrelations at resolution K=1ms       
+    !! To speed up program execution, you can modify the parameters
+       in "ShinGLMCC/Correlation.py".
+       For connectivity estimation only, reducing the histogram width
+       of resolution WINHALF_MS "J"(0.1ms) and "K"(1ms) to the minimum required,
+       51.0ms, will make the process.
+
+................................
+Step 3: Evaluate ShinGLMCC/GLMCC with no connection and
+   * Run the following command:
+    % python ShinGLMCC_main.py DATAID Shin/GLM
+     For example, if 'Shin' is specified as the second argument,
+     the estimation results using ShinGLMCC will be output as follows:
+       * DATAID_Shin_best.csv
+       * intermediate files in a folder named DATAID_Shin_par
+
+
+................................
+Step 4: Create a scatter plot of the connectivity.
+   * Run the following command:
+    % python ShinGLMCC_fig.py DATAID Shin/GLM
+     For example, if 'Shin' is specified as the second argument,
+     the estimation results using ShinGLMCC will be output as follows:
+       * DATAID_Shin_J.pdf
