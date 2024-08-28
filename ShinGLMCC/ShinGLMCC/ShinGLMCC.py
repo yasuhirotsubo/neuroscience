@@ -7,7 +7,8 @@ ShinGLMCC.ShinGLMCC.py
     ShinGLMCC and GLMCC.
 
   by Yasuhiro Tsubo
-  modified ver. 2023.10.23
+  modified ver 1.0 2023.10.23
+           ver 2.0 2024.08.28  (add find0ccrow())
 
 ##############################################################################
 """
@@ -1080,3 +1081,23 @@ def figdata(dfbs,dfa0):
     dfJ = pd.concat([dfJ.drop(columns=["ref","tar"]),dfcls],axis=1)
     
     return dfJ
+
+## find0ccrow() -----------------------------------------------
+## Find rows where these bins have a frequency of zero.
+##  [input]
+##   +"dfccj": (Pandas DataFrame)
+##             Cross-correlation histogram table with resolution "J"= 0.1ms
+##   +"dfcck": (Pandas DataFrame)
+##             Cross-correlation histogram table with resolution "K"= 1ms
+##  [output]
+##   +"dfccj": (Pandas DataFrame)
+##   +"dfcck": (Pandas DataFrame)
+##             any rows containing a 0 within WINHALF["C"] are replaced with 1.
+
+def find0ccrow(dfcck,dfccj):
+
+    dflck = dfcck[(dfcck.loc[:,-WINHALF_MS["C"]:WINHALF_MS["C"]]==0).any(axis=1)]
+    dfcck.loc[dfcck[["ref", "tar"]].isin(dflck).all(axis=1),-WINHALF_MS["K"]:WINHALF_MS["K"]]=1
+    dfccj.loc[dfccj[["ref", "tar"]].isin(dflck).all(axis=1),-WINHALF_MS["J"]:WINHALF_MS["J"]]=1
+    
+    return dfcck,dfccj

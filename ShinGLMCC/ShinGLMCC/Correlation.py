@@ -6,7 +6,10 @@ ShinGLMCC.Correlation.py
     for computing correlation functions.
 
   by Yasuhiro Tsubo (tsubo@fc.ritsumei.ac.jp)
-  modified ver. 2023.10.23
+  modified ver 1.0. 2023.10.23
+  modified ver 2.0. 2024.08.28
+    * in dic2cor():
+      Modified to output autocorrelation with ref sorted in ascending order.
 
 ##############################################################################
 """
